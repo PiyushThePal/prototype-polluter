@@ -1,35 +1,56 @@
-# Prototype-Polluter
+# prototype-polluter
 
-Take a list of domains and check for Prototype Pollution Vulnerability.
+Take a list of URLs and check each for **client-side prototype pollution** by appending `__proto__[testparam]=testval` and verifying that the rendered page exposes `window.testparam === 'testval'`.
+
+Built on top of [detectify/page-fetch](https://github.com/detectify/page-fetch) for headless rendering.
 
 ## Install
 
-```
-▶ go get github.com/PiyushThePal/prototype-polluter
-```
-## Basic Usage
+Requires Go 1.17+.
 
-Use "-h" for help
+```bash
+go install github.com/PiyushThePal/prototype-polluter@latest
+```
 
-```
-▶ cat domains-list.txt | prototype-polluter
-```
-<img width="1018" alt="Screenshot 2021-07-10 at 1 40 35 PM" src="https://user-images.githubusercontent.com/46394419/125156722-93690c80-e184-11eb-97d1-aac6409afda0.png">
+`page-fetch` is auto-installed on first run if not already on `PATH`. Make sure `$GOPATH/bin` (or `$HOME/go/bin`) is in your `PATH`.
 
-```
-▶ cat domains-list.txt | prototype-polluter -v
-```
-<img width="1017" alt="Screenshot 2021-07-10 at 1 34 10 PM" src="https://user-images.githubusercontent.com/46394419/125156712-864c1d80-e184-11eb-92f1-4202be0bf661.png">
+## Usage
 
+```bash
+prototype-polluter -h
 ```
-▶ waybackurls example.com | prototype-polluter -v
+
+Pipe URLs in via stdin:
+
+```bash
+cat domains-list.txt | prototype-polluter
 ```
-<img width="799" alt="Screenshot 2021-07-10 at 1 33 25 PM" src="https://user-images.githubusercontent.com/46394419/125156723-93690c80-e184-11eb-8023-7dfb78eaefa2.png">
 
-## About
+Verbose mode also shows non-vulnerable results:
 
-This tool is actually built on the <a href="https://github.com/detectify/page-fetch">page-fetch</a> tool.
-<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&&&
-<br>
-Sometimes this tool can also give false-positive report, so before reporting the vulnerability please have a manual look to the vulnerability.
+```bash
+cat domains-list.txt | prototype-polluter -v
+```
+
+Combine with `waybackurls` for live recon:
+
+```bash
+waybackurls example.com | prototype-polluter -v
+```
+
+## How it works
+
+For each URL on stdin:
+1. Append `?__proto__[testparam]=testval` (or `&...` if a query string already exists).
+2. Render the URL with `page-fetch` and evaluate `window.testparam == 'testval' ? 'Vulnerable' : 'Not Vulnerable'`.
+3. Print `Vulnerable --> <url>` for hits.
+
+False positives are possible — manually verify before reporting.
+
+## Authorization
+
+For authorized security testing only — bug bounty programs in scope, your own assets, or explicit pentest engagements. Spraying prototype-pollution probes at targets you don't have permission to test is not OK.
+
+## License
+
+MIT
